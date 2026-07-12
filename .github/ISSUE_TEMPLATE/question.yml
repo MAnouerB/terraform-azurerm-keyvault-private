@@ -1,0 +1,36 @@
+name: Question
+description: Ask a question about how to use this module
+title: "[question]: "
+labels: ["question"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Questions are welcome. Before opening one, please:
+        1. Check the README and the `examples/` folder
+        2. Check `.ai/ARCHITECTURE.md` for design decisions
+        3. Search existing issues (including closed ones)
+
+  - type: input
+    id: module-version
+    attributes:
+      label: Module version
+      placeholder: "v0.2.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: What you have tried
+      description: |
+        Configurations you have tested, error messages you have seen,
+        documentation you have consulted.

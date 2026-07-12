@@ -1,0 +1,57 @@
+name: Feature request
+description: Propose a new capability or improvement
+title: "[feature]: "
+labels: ["enhancement", "triage"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for proposing an improvement. Please describe the use case
+        first, then the desired behavior. This helps decide whether the
+        feature fits the module's scope.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: |
+        What are you trying to achieve? Why does the current module fall short?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: |
+        What should the module do? Include the new variables, outputs, or
+        resources you would expect.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: |
+        What workarounds have you tried? What other designs did you consider
+        and why did they not work?
+
+  - type: dropdown
+    id: breaking
+    attributes:
+      label: Would this be a breaking change?
+      options:
+        - "No — new input with safe default"
+        - "Yes — removes or renames an existing input/output"
+        - "Yes — changes a default value with security or cost impact"
+        - "Not sure"
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Links to Azure documentation, related modules, PRs, etc.

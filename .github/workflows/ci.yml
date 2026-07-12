@@ -1,0 +1,195 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Cancel in-progress runs when a new commit lands on the same PR
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write        # required for OIDC to Azure (Terratest job)
+
+env:
+  TERRAFORM_VERSION: "1.9.8"
+  TERRAFORM_DOCS_VERSION: "0.19.0"
+  TFLINT_VERSION: "0.53.0"
+  TFSEC_VERSION: "1.28.11"
+  CHECKOV_VERSION: "3.2.255"
+  GO_VERSION: "1.23"
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Lint: fmt + validate + tflint on the module and every example
+  # ---------------------------------------------------------------------------
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - name: Terraform fmt (recursive)
+        run: terraform fmt -check -recursive -diff
+
+      - name: Terraform validate (module)
+        run: |
+          terraform init -backend=false -input=false
+          terraform validate
+
+      - name: Terraform validate (examples)
+        run: |
+          for example in examples/*/; do
+            if [ -f "$example/main.tf" ]; then
+              echo "::group::validate $example"
+              (cd "$example" && terraform init -backend=false -input=false && terraform validate)
+              echo "::endgroup::"
+            fi
+          done
+
+      - name: Setup tflint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: v${{ env.TFLINT_VERSION }}
+
+      - name: tflint init
+        run: tflint --init
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: tflint (recursive)
+        run: tflint --recursive --format compact
+
+  # ---------------------------------------------------------------------------
+  # Security: tfsec + checkov (both non-blocking initially, results in Security tab)
+  # ---------------------------------------------------------------------------
+  security:
+    name: Security scan
+    needs: lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write   # upload SARIF to Security tab
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: tfsec
+        uses: aquasecurity/tfsec-sarif-action@v0.1.4
+        with:
+          sarif_file: tfsec.sarif
+
+      - name: Upload tfsec SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: tfsec.sarif
+          category: tfsec
+
+      - name: checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: .
+          framework: terraform
+          output_format: cli,sarif
+          output_file_path: console,checkov.sarif
+          soft_fail: true       # non-blocking; flip to false when clean
+          skip_check: CKV_TF_1  # module source not pinned — expected on template
+
+      - name: Upload checkov SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: checkov.sarif
+          category: checkov
+
+  # ---------------------------------------------------------------------------
+  # Docs drift: fail if terraform-docs would change README.md
+  # ---------------------------------------------------------------------------
+  docs:
+    name: Docs drift check
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup terraform-docs
+        uses: terraform-docs/gh-actions@v1.3.0
+        with:
+          working-dir: .
+          config-file: .terraform-docs.yml
+          output-file: README.md
+          output-method: inject
+          fail-on-diff: true
+          git-push: false
+
+  # ---------------------------------------------------------------------------
+  # Cost estimate: comment Infracost diff on PRs
+  # ---------------------------------------------------------------------------
+  cost:
+    name: Cost estimate
+    if: github.event_name == 'pull_request'
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+
+      - name: Setup Infracost
+        uses: infracost/actions/setup@v3
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+
+      - name: Baseline (main branch) — best-effort
+        id: baseline
+        continue-on-error: true
+        run: |
+          if [ -d "examples/complete" ] && [ -f "examples/complete/main.tf" ]; then
+            infracost breakdown \
+              --path=examples/complete \
+              --format=json \
+              --out-file=/tmp/infracost-base.json
+            echo "has_baseline=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_baseline=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          clean: false
+
+      - name: PR breakdown
+        id: pr
+        continue-on-error: true
+        run: |
+          if [ -d "examples/complete" ] && [ -f "examples/complete/main.tf" ]; then
+            infracost diff \
+              --path=examples/complete \
+              --compare-to=/tmp/infracost-base.json \
+              --format=json \
+              --out-file=/tmp/infracost.json
+            echo "has_diff=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_diff=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Post Infracost comment
+        if: steps.pr.outputs.has_diff == 'true'
+        run: |
+          infracost comment github \
+            --path=/tmp/infracost.json \
+            --repo=$GITHUB_REPOSITORY \
+            --github-token=${{ secrets.GITHUB_TOKEN }} \
+            --pull-request=${{ github.event.pull_request.number }} \
+            --behavior=update

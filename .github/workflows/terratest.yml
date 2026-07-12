@@ -1,0 +1,74 @@
+name: Terratest
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [labeled, synchronize]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      example:
+        description: "Example to test (leave empty to run all)"
+        required: false
+        type: string
+
+permissions:
+  id-token: write        # OIDC to Azure
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: terratest-${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: false   # never cancel a running Terratest — orphans risk
+
+env:
+  TERRAFORM_VERSION: "1.9.8"
+  GO_VERSION: "1.23"
+
+jobs:
+  terratest:
+    name: Terratest
+    # Only run on PR when the 'run-tests' label is present, or on push to main, or manual
+    if: >
+      github.event_name == 'push' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+       contains(github.event.pull_request.labels.*.name, 'run-tests'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: test/go.sum
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Terratest
+        working-directory: test
+        env:
+          ARM_USE_OIDC: "true"
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          TF_VAR_location: "francecentral"
+        run: |
+          if [ -z "$(ls -A . 2>/dev/null | grep -E '_test\.go$')" ]; then
+            echo "No Go test files found; skipping."
+            exit 0
+          fi
+          go mod download
+          go test -v -timeout 90m ./...
