@@ -27,6 +27,7 @@ Once `1.0.0` is released, breaking changes will only occur on major version bump
 - New input variable `role_assignments` to grant RBAC roles on the Key Vault (map keyed by stable identifiers; defaults to empty).
 - New input variable `diagnostic_settings_enabled` to toggle Key Vault diagnostic settings (defaults to true).
 - New input variable `diagnostic_log_categories` to restrict which Key Vault diagnostic log categories are sent to Log Analytics (defaults to null — all supported categories).
+- `locals`: computed Key Vault name (`kv-<name>`) and module-managed tags merged with user-supplied tags per the tags-merge convention.
 
 ### Changed
 
@@ -37,37 +38,3 @@ Once `1.0.0` is released, breaking changes will only occur on major version bump
 ### Fixed
 
 ### Security
-
-<!--
-## [0.1.0] - YYYY-MM-DD
-
-### Added
-- Initial release
--->
-##  [0.1.0] - 2026-07-12
-
-### Added 
-
-- Initial template release
-- Standard Terraform module structure (`main.tf`, `variables.tf`, `outputs.tf`, `versions.tf`, `locals.tf`)
-- AI-assisted layer: `CLAUDE.md`, `.claude/settings.json`, and 7 slash commands
-  (`/tf-add-variable`, `/tf-add-resource`, `/tf-write-example`,
-  `/tf-write-terratest`, `/tf-review-pr`, `/tf-update-docs`, `/tf-release`)
-- `.ai/` context: `CONTEXT.md`, `ARCHITECTURE.md`, `CONVENTIONS.md`,
-  reusable snippets (tags merge, private endpoint, diagnostic settings,
-  variable validation), canonical style references (good-variable,
-  good-resource, good-output)
-- GitHub Actions CI workflow (`ci.yml`): terraform fmt, validate, tflint,
-  tfsec, checkov, terraform-docs drift check, Infracost cost estimate
-- GitHub Actions Terratest workflow (`terratest.yml`) with OIDC to Azure,
-  label-gated on PRs (`run-tests`), automatic on push to main
-- GitHub Actions Release workflow (`release.yml`) that publishes a
-  GitHub Release from CHANGELOG on tag push
-- InnerSource files: PR template, three issue templates (bug, feature,
-  question), `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`
-- OIDC setup guide (`docs/OIDC-SETUP.md`) for one-time Azure ↔ GitHub
-  federated credential configuration
-- Repository meta-README (`README.md`) and module README template
-  (`README.template.md`)
-- Configuration files: `.gitignore`, `.tflint.hcl`, `.terraform-docs.yml`
-- Apache 2.0 license
