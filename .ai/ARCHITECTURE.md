@@ -234,6 +234,11 @@ controlled by the customer, not Microsoft). It requires:
 CMK is out of scope for `v0.1.0`. The module will add CMK support in
 `v0.2.0` behind an opt-in variable.
 
+The system-assigned managed identity on the vault (an `identity` block on
+`azurerm_key_vault`, and the `system_assigned_identity_principal_id` output
+that exposes its `principal_id`) is a prerequisite for CMK and is likewise
+deferred to `v0.2.0`. `v0.1.0` provisions no identity on the vault.
+
 ### Consequences
 
 - `v0.1.0` uses Microsoft-managed keys for vault storage encryption

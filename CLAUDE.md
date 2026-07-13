@@ -44,6 +44,8 @@ Do not reinvent patterns that exist in `.ai/snippets/`. Copy and adapt them.
 - Add a CHANGELOG entry under `[Unreleased]` for any user-facing change
 - Regenerate the README section between `<!-- BEGIN_TF_DOCS -->` markers
 - Add or update Terratest assertions when adding a new output or behavior
+- Use azurerm v4 attribute names — the provider renamed several attributes from enable_X to X_enabled between v3 and v4. Check the provider docs when in doubt.
+- When adding resources, prefer azurerm v4 attribute names. Known renames: enable_X → X_enabled (booleans), metric → enabled_metric (on diagnostic settings). Check terraform validate output for other deprecations.
 
 ## Common commands
 
