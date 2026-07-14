@@ -1,0 +1,6 @@
+# Copy this file to terraform.tfvars and adjust values before running terraform.
+
+name_prefix = "kvbasic"
+
+# Optional — defaults to "francecentral"
+# location = "westeurope"
