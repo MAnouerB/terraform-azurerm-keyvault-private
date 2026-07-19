@@ -141,6 +141,16 @@ conventions consistently.
 
 <!-- Add new modules to this list as they are published. -->
 
+## Examples
+
+- [`examples/basic`](examples/basic/) — minimal dev/test deployment with public
+  network access enabled (the private endpoint is still created). Not for
+  production.
+- [`examples/complete`](examples/complete/) — production-representative pattern:
+  private-only access, restrictive network ACLs with an optional IP allowlist,
+  RBAC role assignments (current user as admin, optional reader), and diagnostic
+  settings streaming to a dedicated Log Analytics workspace.
+
 ## Versioning of the template itself
 
 This template is versioned with SemVer independently of the modules

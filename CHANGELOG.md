@@ -34,6 +34,7 @@ Once `1.0.0` is released, breaking changes will only occur on major version bump
 - Diagnostic settings streaming Key Vault logs (auto-discovered categories or explicit list) and AllMetrics to a Log Analytics workspace, gated by `diagnostic_settings_enabled` with a plan-time precondition ensuring the workspace ID is set when enabled.
 - Five outputs exposing the Key Vault (`id`, `name`, `vault_uri`) and the private endpoint (`id`, private IP).
 - `examples/basic`: minimal deployment showing the public-network access pattern with the private endpoint still created (dev/test scenario, not for production).
+- `examples/complete`: production-representative deployment with private-only access, Log Analytics diagnostic settings, and RBAC role assignments (current user as admin, optional reader via variable).
 
 ### Changed
 

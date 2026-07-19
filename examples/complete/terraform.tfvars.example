@@ -1,0 +1,13 @@
+# Copy this file to terraform.tfvars and adjust values before running terraform.
+
+name_prefix = "kvcomplete"
+
+# Optional — defaults to "francecentral"
+# location = "westeurope"
+
+# Optional — grant "Key Vault Secrets User" to an additional principal (user, group, or SP)
+# additional_reader_object_id = "00000000-0000-0000-0000-000000000000"
+
+# Optional — whitelist public IPs for local testing (get yours with: curl ifconfig.me)
+# Leave empty in production; the vault is reachable via the private endpoint only.
+# additional_ip_allowlist = ["203.0.113.42/32"]
