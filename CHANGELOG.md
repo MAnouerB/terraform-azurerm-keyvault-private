@@ -35,6 +35,7 @@ Once `1.0.0` is released, breaking changes will only occur on major version bump
 - Five outputs exposing the Key Vault (`id`, `name`, `vault_uri`) and the private endpoint (`id`, private IP).
 - `examples/basic`: minimal deployment showing the public-network access pattern with the private endpoint still created (dev/test scenario, not for production).
 - `examples/complete`: production-representative deployment with private-only access, Log Analytics diagnostic settings, and RBAC role assignments (current user as admin, optional reader via variable).
+- Terratest suite validating the complete example: resource existence, naming, RBAC, purge protection, network ACLs, tags, and private endpoint configuration. Runs in the terratest.yml GitHub Actions workflow with OIDC auth.
 
 ### Changed
 
